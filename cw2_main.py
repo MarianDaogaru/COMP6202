@@ -131,3 +131,29 @@ def ga_cross(f, n, val, k):
         if i % 1000 == 0:
             print(i, max_fit)
     return results, child
+
+def ccga_init_vals(n, val, k):
+    """
+    n - nr of vars,
+    val - max value of var
+    k point at which "the binary goes to decimal"""
+    xi = numpy.zeros([100, n, n, 16])
+    for j in range(100):
+        for i in range(n):
+            for ii in range(n):
+                done = 0
+                while not done:
+                    xi[j, i, ii] = binary_create()
+                    if ((abs(val_transt(xi[j, i], k)) - val) <= 0 ).all():
+                        done = 1
+    return xi
+
+
+def ccga(f, n, val, k):
+    x = ga_init_vals(n, val, k)
+    init_fit = numpy.zeros(100)
+    for i in range(100):
+        init_fit[i] = f(val_transt(x[i], k))
+        print(init_fit[i])
+    max_fit = init_fit[init_fit.argmin()]
+    results = np.zeros(100000)
