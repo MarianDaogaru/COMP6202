@@ -81,19 +81,23 @@ def mutation(x1, x2, k, val):
     N, n = x1.shape
     mp = 1/ n
 
-    A = numpy.random.randint(0, n-2, N)
-    B = numpy.rint(numpy.random.uniform(A, n, N)).astype(numpy.int)
-
+#    A = numpy.random.randint(1, n-2, N)
+#    B = numpy.rint(numpy.random.uniform(A+1, n, N)).astype(numpy.int)
+    A = numpy.random.randint(1, n-2)
+    B = numpy.random.randint(A+1, n)
     child = x1
     t = numpy.random.random(N) < co
     child[t,A:B] = x2[t, A:B]
 
     done = 0
     while not done:
-        child[numpy.random.random(child.shape) < 1] -= 1
-        child = numpy.abs(child)
-        if ((abs(val_transt(child, k)) - val) <= 0).all():
+        c_o = numpy.abs(val_transt(child, k)) > val
+        if (c_o.sum() == 0):
             done = 1
+        else:
+            child2 = child[c_o]
+            child2[numpy.random.random(child2.shape) < mp] -= 1
+            child[c_o] = numpy.abs(child2)
     return child
 
 
@@ -155,7 +159,7 @@ def ga_cross(f, n, val, k):
         if i % 100 == 0:
             print(i, fitness[fitness.argmin()])
 
-    return results
+    return results, x_old
 
     """for i in range(100000):
         A = np.random.randint(0, 100)
