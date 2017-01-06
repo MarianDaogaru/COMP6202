@@ -1,17 +1,28 @@
 import numpy
 import matplotlib.pyplot as plt
 
+
+"----- FUNCTIONS -----------"
 def rastrigin(xi):
+    """
+    USE K = 3
+    """
     n = 20
     return 3 * n + (xi * xi - 3 * numpy.cos(2 * numpy.pi * xi)).sum()
 
 
 def schwefel(xi):
+    """
+    USE K = 9
+    """
     n = 10
     return 418.9829 * n - (xi * numpy.sin(numpy.sqrt(numpy.abs(xi)))).sum()
 
 
 def griewangk(xi):
+    """
+    USE K = 10
+    """
     n = numpy.zeros_like(xi)
     for i in range(len(xi)):
         n[i] = xi[i] / numpy.sqrt(i+1)
@@ -19,10 +30,40 @@ def griewangk(xi):
 
 
 def ackley(xi):
+    """
+    USE K = 5
+    """
     n = 30
     return 20 + numpy.e - 20 * numpy.exp(-0.2 * numpy.sqrt((xi * xi).sum() / n)) - \
            numpy.exp((numpy.cos(2 * numpy.pi * xi)).sum() / n)
 
+
+"----- PARTS USED BY MAIN COMP -----------"
+def binary_create():
+    x = numpy.random.rand(16)
+    xc = x.copy()
+    xc[x>0.5] = 1
+    xc[x<0.5] = 0
+    return xc
+
+
+def val_transt(xi, k):
+    """trasnlate values"""
+    p2 = numpy.power(2, numpy.fliplr([numpy.arange(k-15, k)])[0].astype(numpy.float64)) # gets the powers of 2
+    return (-1)**xi[:,0] * numpy.dot(xi[:, 1:], p2)
+
+
+def fit_prop_give_index(fitness):
+    """
+    fitness - array containing the fitness values of each stuff
+    """
+    fitness = numpy.abs(fitness)
+    total_fitness = (fitness).sum()
+    random_fitness = numpy.random.uniform(0, total_fitness)
+    return numpy.argmax(ftiness.sumsum() >= random_fitness)
+
+
+"----- GA -----------"
 
 def mutation(x1, x2, k, val):
     co = 0.6
@@ -44,23 +85,9 @@ def mutation(x1, x2, k, val):
                         child[j, i] = 1
                     else:
                         child[j, i] = 0
-            if ((abs(val_transt(child, k)) - val) <=0).all():
+            if ((abs(val_transt(child, k)) - val) <= 0).all():
                  done = 1
     return child
-
-
-def binary_create():
-    x = numpy.random.rand(16)
-    xc = x.copy()
-    xc[x>0.5] = 1
-    xc[x<0.5] = 0
-    return xc
-
-
-def val_transt(xi, k):
-    """trasnlate values"""
-    p2 = numpy.power(2, numpy.fliplr([numpy.arange(k-15, k)])[0].astype(numpy.float64)) # gets the powers of 2
-    return (-1)**xi[:,0] * numpy.dot(xi[:, 1:], p2)
 
 
 def ga_init_vals(n, val, k):
@@ -127,6 +154,11 @@ def ga_cross(f, n, val, k):
             print(i, max_fit)
     return results, child
 
+
+
+
+
+"----- CCGA-----------"
 def ccga_init_vals(n, val, k):
     """
     n - nr of vars,
