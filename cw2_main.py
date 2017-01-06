@@ -89,6 +89,9 @@ def mutation(x1, x2, k, val):
     t = numpy.random.random(N) < co
     child[t,A:B] = x2[t, A:B]
 
+
+    child[numpy.random.random(child.shape) < mp] -= 1
+    child = numpy.abs(child)
     done = 0
     while not done:
         c_o = numpy.abs(val_transt(child, k)) > val
@@ -116,28 +119,25 @@ def ga_init_vals(n, val, k):
                     done = 1
     return xi
 
-
+from copy import deepcopy
 def ga_cross(f, n, val, k):
     x_old = ga_init_vals(n, val, k)
     fitness = numpy.zeros(100)
 #    for i in range(100):
 #        fitness[i] = f(val_transt(x_old[i], k))
     fitness = f(val_transt1(x_old, k))
-    print(type(fitness), fitness.shape)
     max_fit = fitness[fitness.argmin()]
     min_fit = abs(fitness[fitness.argmax()])
 
-    iterations = 10**3 * 5
+    iterations = 10**3 *5
     results = np.zeros(iterations) #max fitness
     x_new = numpy.zeros_like(x_old)
 
     #first try with just 2 children
     for i in range(iterations):
-#        for j in range(100):
-#            fitness[j] = f(val_transt(x_old[j], k))
-        fitness = min_fit - numpy.abs(f(val_transt1(x_old, k)))
+        fitness = numpy.abs(f(val_transt1(x_old, k)))
         elite = fitness.argmin() # index of the elite
-
+        tre = deepcopy(x_old[elite])
         for j in range(50):
             #remake the pop from old pop
             A = fit_prop_give_index(min_fit - fitness) #so the closer you are to 0, the more chances there are
@@ -151,15 +151,14 @@ def ga_cross(f, n, val, k):
 
 #        for j in range(100):
 #            fitness[j] = f(val_transt(x_new[j], k))
-        fitness = min_fit - numpy.abs(f(val_transt1(x_new, k)))
-        not_so_elite = fitness.argmax()
-
-        x_new[not_so_elite] = x_old[elite]
-        x_old = x_new
+        fitness_new = numpy.abs(f(val_transt1(x_new, k)))
+        not_so_elite = fitness_new.argmax()
+        x_new[not_so_elite] = tre
+        x_old = x_new.copy()
         if i % 100 == 0:
-            print(i, fitness[fitness.argmin()])
+            print(i, fitness[fitness.argmin()], fitness_new[fitness_new.argmin()])
 
-    return results, x_old
+    return results, x_old, fitness
 
     """for i in range(100000):
         A = np.random.randint(0, 100)
