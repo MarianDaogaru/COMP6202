@@ -59,15 +59,8 @@ def binary_create():
 
 def val_transt(xi, k):
     """trasnlate values"""
-    N, n = xi.shape
-    vals = numpy.zeros(N)
-    for j in range(N):
-        s = (-1)**xi[j, 0]
-        v = 0
-        for i in range(1,n):
-            v+= 2**(k-i) * xi[j, i]
-        vals[j] = s * v
-    return vals
+    p2 = numpy.power(2, numpy.fliplr([numpy.arange(k-15, k)])[0].astype(numpy.float64)) # gets the powers of 2
+    return (-1)**xi[:,0] * numpy.dot(xi[:, 1:], p2)
 
 
 def ga_init_vals(n, val, k):
@@ -92,6 +85,8 @@ def ga_cross(f, n, val, k):
         init_fit[i] = f(val_transt(x[i], k))
         print(init_fit[i])
     max_fit = init_fit[init_fit.argmin()]
+    min_fit = init_fit[init_fit.argmax()]
+
     results = np.zeros(100000)
 
     for i in range(100000):
