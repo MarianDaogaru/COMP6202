@@ -8,7 +8,7 @@ def rastrigin(xi):
     USE K = 3
     """
     n = 20
-    return 3 * n + (xi * xi - 3 * numpy.cos(2 * numpy.pi * xi)).sum()
+    return 3 * n + (xi * xi - 3 * numpy.cos(2 * numpy.pi * xi)).sum(axis=1)
 
 
 def schwefel(xi):
@@ -16,7 +16,7 @@ def schwefel(xi):
     USE K = 9
     """
     n = 10
-    return 418.9829 * n - (xi * numpy.sin(numpy.sqrt(numpy.abs(xi)))).sum()
+    return 418.9829 * n - (xi * numpy.sin(numpy.sqrt(numpy.abs(xi)))).sum(axis=1)
 
 
 def griewangk(xi):
@@ -26,7 +26,7 @@ def griewangk(xi):
     n = numpy.zeros_like(xi)
     for i in range(len(xi)):
         n[i] = xi[i] / numpy.sqrt(i+1)
-    return 1 + (xi * xi / 4000).sum() - (numpy.cos(n)).prod()
+    return 1 + (xi * xi / 4000).sum(axis=1) - (numpy.cos(n)).prod(axis=1)
 
 
 def ackley(xi):
@@ -34,8 +34,8 @@ def ackley(xi):
     USE K = 5
     """
     n = 30
-    return 20 + numpy.e - 20 * numpy.exp(-0.2 * numpy.sqrt((xi * xi).sum() / n)) - \
-           numpy.exp((numpy.cos(2 * numpy.pi * xi)).sum() / n)
+    return 20 + numpy.e - 20 * numpy.exp(-0.2 * numpy.sqrt((xi * xi).sum(axis=1) / n)) - \
+           numpy.exp((numpy.cos(2 * numpy.pi * xi)).sum(axis=1) / n)
 
 
 "----- PARTS USED BY MAIN COMP -----------"
@@ -51,7 +51,10 @@ def val_transt(xi, k):
     """trasnlate values"""
     p2 = numpy.power(2, numpy.fliplr([numpy.arange(k-15, k)])[0].astype(numpy.float64)) # gets the powers of 2
     return (-1)**xi[:,0] * numpy.dot(xi[:, 1:], p2)
-
+def val_transt1(xi, k):
+    """trasnlate values"""
+    p2 = numpy.power(2, numpy.fliplr([numpy.arange(k-15, k)])[0].astype(numpy.float64)) # gets the powers of 2
+    return (-1)**xi[:,:,0] * numpy.dot(xi[:,:, 1:], p2)
 
 def fit_prop_give_index(fitness):
     """
@@ -60,21 +63,29 @@ def fit_prop_give_index(fitness):
     fitness = numpy.abs(fitness)
     total_fitness = (fitness).sum()
     random_fitness = numpy.random.uniform(0, total_fitness)
-    return numpy.argmax(ftiness.sumsum() >= random_fitness)
+    return numpy.argmax(fitness.cumsum() >= random_fitness)
 
+
+def plot_GA(f, n, val, k):
+    X = ga_cross(f, n, val, k)
+    plt.plot(X)
 
 "----- GA -----------"
 
 def mutation(x1, x2, k, val):
+    """
+    crossover & bitflip
+    """
     co = 0.6
     N, n = x1.shape
     mp = 1/ n
     child = numpy.zeros_like(x1)
-    A = numpy.random.randint(0, 16)
+    A = numpy.random.randint(0, 14)
     B = numpy.random.randint(A, 16)
+
     for j in range(N):
         if numpy.random.rand() < co:
-            child[j] = xi[j]
+            child[j] = x1[j]
             child[j, A:B] = x2[j, A:B]
 
         done = 0
@@ -105,19 +116,52 @@ def ga_init_vals(n, val, k):
                     done = 1
     return xi
 
+
 def ga_cross(f, n, val, k):
-    x = ga_init_vals(n, val, k)
-    init_fit = numpy.zeros(100)
-    for i in range(100):
-        init_fit[i] = f(val_transt(x[i], k))
-        print(init_fit[i])
-    max_fit = init_fit[init_fit.argmin()]
-    min_fit = init_fit[init_fit.argmax()]
+    x_old = ga_init_vals(n, val, k)
+    fitness = numpy.zeros(100)
+#    for i in range(100):
+#        fitness[i] = f(val_transt(x_old[i], k))
+    fitness = f(val_transt1(x_old, k))
+    print(type(fitness), fitness.shape)
+    max_fit = fitness[fitness.argmin()]
+    min_fit = fitness[fitness.argmax()]
 
-    results = np.zeros(100000)
+    iterations = 10**3 * 5
+    results = np.zeros(iterations) #max fitness
+    x_new = numpy.zeros_like(x_old)
 
-    for i in range(100000):
-        iter_no = 0
+    #first try with just 2 children
+    for i in range(iterations):
+#        for j in range(100):
+#            fitness[j] = f(val_transt(x_old[j], k))
+        fitness = min_fit - f(val_transt1(x_old, k))
+        elite = fitness.argmin() # index of the elite
+
+        for j in range(50):
+            #remake the pop from old pop
+            A = fit_prop_give_index(min_fit - fitness) #so the closer you are to 0, the more chances there are
+            B = fit_prop_give_index(min_fit - fitness)
+
+            x_new[2*j] = mutation(x_old[A], x_old[B], k, val) #child1
+            x_new[2*j+1] = mutation(x_old[A], x_old[B], k, val) #child2
+
+        # print(results.shape, results[i].shape, elite, fitness.argmin(),fitness[fitness.argmin()] )
+        results[i] = fitness[elite]
+
+#        for j in range(100):
+#            fitness[j] = f(val_transt(x_new[j], k))
+        fitness = min_fit - f(val_transt1(x_new, k))
+        not_so_elite = fitness.argmax()
+
+        x_new[not_so_elite] = x_old[elite]
+        x_old = x_new
+        if i % 100 == 0:
+            print(i, fitness[fitness.argmin()])
+
+    return results
+
+    """for i in range(100000):
         A = np.random.randint(0, 100)
         B = np.random.randint(0, 100)
 
@@ -152,7 +196,9 @@ def ga_cross(f, n, val, k):
         results[i] = max_fit
         if i % 1000 == 0:
             print(i, max_fit)
-    return results, child
+
+
+    return results, child"""
 
 
 
