@@ -51,6 +51,7 @@ def val_transt(xi, k):
     """trasnlate values"""
     p2 = numpy.power(2, numpy.fliplr([numpy.arange(k-15, k)])[0].astype(numpy.float64)) # gets the powers of 2
     return (-1)**xi[:,0] * numpy.dot(xi[:, 1:], p2)
+
 def val_transt1(xi, k):
     """trasnlate values"""
     p2 = numpy.power(2, numpy.fliplr([numpy.arange(k-15, k)])[0].astype(numpy.float64)) # gets the powers of 2
@@ -79,25 +80,20 @@ def mutation(x1, x2, k, val):
     co = 0.6
     N, n = x1.shape
     mp = 1/ n
-    child = numpy.zeros_like(x1)
-    A = numpy.random.randint(0, 14)
-    B = numpy.random.randint(A, 16)
 
-    for j in range(N):
-        if numpy.random.rand() < co:
-            child[j] = x1[j]
-            child[j, A:B] = x2[j, A:B]
+    A = numpy.random.randint(0, n-2, N)
+    B = numpy.rint(numpy.random.uniform(A, n, N)).astype(numpy.int)
 
-        done = 0
-        while not done:
-            for i in range(n):
-                if numpy.random.rand() < mp:
-                    if child[j, i] == 0:
-                        child[j, i] = 1
-                    else:
-                        child[j, i] = 0
-            if ((abs(val_transt(child, k)) - val) <= 0).all():
-                 done = 1
+    child = x1
+    t = numpy.random.random(N) < co
+    child[t,A:B] = x2[t, A:B]
+
+    done = 0
+    while not done:
+        child[numpy.random.random(child.shape) < 1] -= 1
+        child = numpy.abs(child)
+        if ((abs(val_transt(child, k)) - val) <= 0).all():
+            done = 1
     return child
 
 
@@ -125,7 +121,7 @@ def ga_cross(f, n, val, k):
     fitness = f(val_transt1(x_old, k))
     print(type(fitness), fitness.shape)
     max_fit = fitness[fitness.argmin()]
-    min_fit = fitness[fitness.argmax()]
+    min_fit = abs(fitness[fitness.argmax()])
 
     iterations = 10**3 * 5
     results = np.zeros(iterations) #max fitness
@@ -135,7 +131,7 @@ def ga_cross(f, n, val, k):
     for i in range(iterations):
 #        for j in range(100):
 #            fitness[j] = f(val_transt(x_old[j], k))
-        fitness = min_fit - f(val_transt1(x_old, k))
+        fitness = min_fit - numpy.abs(f(val_transt1(x_old, k)))
         elite = fitness.argmin() # index of the elite
 
         for j in range(50):
@@ -151,7 +147,7 @@ def ga_cross(f, n, val, k):
 
 #        for j in range(100):
 #            fitness[j] = f(val_transt(x_new[j], k))
-        fitness = min_fit - f(val_transt1(x_new, k))
+        fitness = min_fit - numpy.abs(f(val_transt1(x_new, k)))
         not_so_elite = fitness.argmax()
 
         x_new[not_so_elite] = x_old[elite]
