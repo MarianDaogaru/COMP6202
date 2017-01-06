@@ -10,7 +10,7 @@ def rastrigin(xi):
     n = 20
     return 3 * n + (xi * xi - 3 * numpy.cos(2 * numpy.pi * xi)).sum(axis=1)
 
-
+# b
 def schwefel(xi):
     """
     USE K = 9
@@ -33,9 +33,9 @@ def ackley(xi):
     """
     USE K = 5
     """
-    n = 30
-    return 20 + numpy.e - 20 * numpy.exp(-0.2 * numpy.sqrt((xi * xi).sum(axis=1) / n)) - \
-           numpy.exp((numpy.cos(2 * numpy.pi * xi)).sum(axis=1) / n)
+    n = 1 / 30
+    return 20 + numpy.e - 20 * numpy.exp(-0.2 * numpy.sqrt((xi * xi).sum(axis=1) * n)) - \
+           numpy.exp((numpy.cos(2 * numpy.pi * xi)).sum(axis=1) * n)
 
 
 "----- PARTS USED BY MAIN COMP -----------"
@@ -129,7 +129,7 @@ def ga_cross(f, n, val, k):
     max_fit = fitness[fitness.argmin()]
     min_fit = abs(fitness[fitness.argmax()])
 
-    iterations = 10**3 *5
+    iterations = 10**5
     results = np.zeros(iterations) #max fitness
     x_new = numpy.zeros_like(x_old)
 
@@ -157,6 +157,11 @@ def ga_cross(f, n, val, k):
         x_old = x_new.copy()
         if i % 100 == 0:
             print(i, fitness[fitness.argmin()], fitness_new[fitness_new.argmin()])
+            with open("{}.txt".format(f.__name__), 'a+') as dat:
+                dat.write(numpy.str(results[i]) + "\n") # just in case
+
+            del(dat)
+
 
     return results, x_old, fitness
 
